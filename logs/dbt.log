@@ -1,0 +1,46 @@
+[0m18:48:53.069200 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x109abcd70>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10cdef590>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10cdef110>]}
+
+
+============================== 18:48:53.133554 | ad4b7114-15c1-4d85-8c3a-0b6c414e847e ==============================
+[0m18:48:53.133554 [info ] [MainThread]: Running with dbt=1.11.8
+[0m18:48:53.134617 [debug] [MainThread]: running dbt with arguments {'log_format': 'default', 'use_colors': 'True', 'no_print': 'None', 'invocation_command': 'dbt init', 'write_json': 'True', 'warn_error': 'None', 'version_check': 'True', 'printer_width': '80', 'introspect': 'True', 'indirect_selection': 'eager', 'send_anonymous_usage_stats': 'True', 'log_path': 'logs', 'cache_selected_only': 'False', 'debug': 'False', 'static_parser': 'True', 'empty': 'None', 'fail_fast': 'False', 'profiles_dir': '/Users/mac/.dbt', 'partial_parse': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'use_experimental_parser': 'False', 'quiet': 'False', 'target_path': 'None', 'log_cache_events': 'False'}
+[0m18:49:24.095582 [debug] [MainThread]: Starter project path: /Users/mac/Desktop/football-data-predict/pred/lib/python3.12/site-packages/dbt/include/starter_project
+[0m18:49:24.123383 [info ] [MainThread]: 
+Your new dbt project "football_prediction" was created!
+
+For more information on how to configure the profiles.yml file,
+please consult the dbt documentation here:
+
+  https://docs.getdbt.com/docs/configure-your-profile
+
+One more thing:
+
+Need help? Don't hesitate to reach out to us via GitHub issues or on Slack:
+
+  https://community.getdbt.com/
+
+Happy modeling!
+
+[0m18:49:24.124151 [info ] [MainThread]: Setting up your profile.
+[0m18:52:50.803049 [info ] [MainThread]: Profile football_prediction written to /Users/mac/.dbt/profiles.yml using target's profile_template.yml and your supplied values. Run 'dbt debug' to validate the connection.
+[0m18:52:50.949133 [debug] [MainThread]: Resource report: {"command_name": "init", "command_success": true, "command_wall_clock_time": 238.01932, "process_in_blocks": "0", "process_kernel_time": 0.570352, "process_mem_max_rss": "124272640", "process_out_blocks": "0", "process_user_time": 2.73394}
+[0m18:52:50.957493 [debug] [MainThread]: Command `dbt init` succeeded at 18:52:50.956633 after 238.03 seconds
+[0m18:52:50.968250 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10cb811f0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10cd7f9b0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10cd7f830>]}
+[0m18:52:50.972399 [debug] [MainThread]: Flushing usage events
+[0m18:52:54.913559 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m19:10:16.024119 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x111a30f20>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x11212b0e0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x11212ac60>]}
+
+
+============================== 19:10:16.032540 | e338ded5-7e18-4ca2-b8b4-8d95c3d54b92 ==============================
+[0m19:10:16.032540 [info ] [MainThread]: Running with dbt=1.11.8
+[0m19:10:16.033571 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'log_format': 'default', 'empty': 'False', 'static_parser': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'indirect_selection': 'eager', 'cache_selected_only': 'False', 'no_print': 'None', 'fail_fast': 'False', 'log_cache_events': 'False', 'quiet': 'False', 'target_path': 'None', 'introspect': 'True', 'debug': 'False', 'log_path': 'logs', 'write_json': 'True', 'partial_parse': 'True', 'invocation_command': 'dbt run --select stg_football_matches', 'use_colors': 'True', 'use_experimental_parser': 'False', 'profiles_dir': '/Users/mac/.dbt', 'warn_error': 'None', 'send_anonymous_usage_stats': 'True', 'version_check': 'True'}
+[0m19:10:16.034604 [error] [MainThread]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path /Users/mac/Desktop/football-data-predict/dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m19:10:16.039983 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": false, "command_wall_clock_time": 0.14899945, "process_in_blocks": "0", "process_kernel_time": 0.528411, "process_mem_max_rss": "103411712", "process_out_blocks": "0", "process_user_time": 2.478257}
+[0m19:10:16.041033 [debug] [MainThread]: Command `dbt run` failed at 19:10:16.040835 after 0.15 seconds
+[0m19:10:16.041749 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x111a30f20>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x111d97ec0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x11212aed0>]}
+[0m19:10:16.042854 [debug] [MainThread]: Flushing usage events
+[0m19:10:20.472447 [debug] [MainThread]: An error was encountered while trying to flush usage events
