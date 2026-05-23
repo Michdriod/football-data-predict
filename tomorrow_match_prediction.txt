@@ -1,0 +1,166 @@
+2026-05-23 22:30:38,091 - INFO - 📡 Fetching upcoming soccer_epl fixtures from The Odds API...
+2026-05-23 22:30:38,092 - INFO -    Markets: h2h,totals
+2026-05-23 22:30:38,092 - INFO -    Regions: uk
+2026-05-23 22:30:38,092 - INFO -    Days ahead: 7
+2026-05-23 22:30:39,263 - INFO - ✅ Fetched 10 fixtures (filtered to 10 within 7 days)
+2026-05-23 22:30:39,263 - INFO -    API Usage - Remaining: 458, Used: 42, Last Cost: 2
+
+================================================================================
+FOOTBALL MATCH PREDICTION SYSTEM
+================================================================================
+
+Start Time: 2026-05-23 22:30:35
+
+================================================================================
+LOADING TRAINED MODELS (LOGISTIC)
+================================================================================
+✓ Loaded: target_over_25_logistic.pkl
+✓ Loaded: target_over_25_logistic_scaler.pkl
+✓ Loaded: target_home_win_logistic.pkl
+✓ Loaded: target_home_win_logistic_scaler.pkl
+✓ Loaded: target_draw_logistic.pkl
+✓ Loaded: target_draw_logistic_scaler.pkl
+✓ Loaded: target_away_win_logistic.pkl
+✓ Loaded: target_away_win_logistic_scaler.pkl
+✓ Loaded: target_home_win_or_draw_logistic.pkl
+✓ Loaded: target_home_win_or_draw_logistic_scaler.pkl
+✓ Loaded: target_away_win_or_draw_logistic.pkl
+✓ Loaded: target_away_win_or_draw_logistic_scaler.pkl
+✓ Loaded: target_btts_yes_logistic.pkl
+✓ Loaded: target_btts_yes_logistic_scaler.pkl
+
+📋 Mode: Auto-Fetch Upcoming Fixtures
+   Days ahead: 7
+
+🔄 Fetching upcoming fixtures from The Odds API...
+✓ Found 10 upcoming fixture(s)
+
+[1/10] Crystal Palace vs Arsenal (2026-05-24)
+[2/10] Man City vs Aston Villa (2026-05-24)
+[3/10] Nott'm Forest vs Bournemouth (2026-05-24)
+[4/10] Liverpool vs Brentford (2026-05-24)
+[5/10] Brighton vs Man United (2026-05-24)
+[6/10] Burnley vs Wolves (2026-05-24)
+[7/10] Sunderland vs Chelsea (2026-05-24)
+[8/10] Tottenham vs Everton (2026-05-24)
+[9/10] Fulham vs Newcastle (2026-05-24)
+[10/10] West Ham vs Leeds (2026-05-24)
+
+================================================================================
+GENERATING PREDICTIONS
+================================================================================
+
+========================================================================================================================
+FOOTBALL MATCH PREDICTIONS
+========================================================================================================================
+
+📅 2026-05-24 | Crystal Palace       vs Arsenal             
+------------------------------------------------------------------------------------------------------------------------
+  Over 2.5 Goals                      | Prob:  61.3% | MEDIUM
+  Home Win                            | Prob:  38.8% | LOW   
+  Draw                                | Prob:  32.8% | LOW   
+  Away Win                            | Prob:  13.2% | LOW   
+  Home Win or Draw (1X)               | Prob:  86.8% | HIGH  
+  Away Win or Draw (X2)               | Prob:  61.2% | MEDIUM
+  Both Teams To Score (Prediction Only) | Prob:  63.5% | MEDIUM
+
+📅 2026-05-24 | Man City             vs Aston Villa         
+------------------------------------------------------------------------------------------------------------------------
+  Over 2.5 Goals                      | Prob:  65.0% | MEDIUM
+  Home Win                            | Prob:  84.5% | HIGH  
+  Draw                                | Prob:  16.0% | LOW   
+  Away Win                            | Prob:   0.9% | LOW   
+  Home Win or Draw (1X)               | Prob:  99.1% | HIGH  
+  Away Win or Draw (X2)               | Prob:  15.5% | LOW   
+  Both Teams To Score (Prediction Only) | Prob:  63.5% | MEDIUM
+
+📅 2026-05-24 | Nott'm Forest        vs Bournemouth         
+------------------------------------------------------------------------------------------------------------------------
+  Over 2.5 Goals                      | Prob:  64.3% | MEDIUM
+  Home Win                            | Prob:   0.0% | LOW   
+  Draw                                | Prob:  40.2% | LOW   
+  Away Win                            | Prob:  78.3% | HIGH  
+  Home Win or Draw (1X)               | Prob:  21.7% | LOW   
+  Away Win or Draw (X2)               | Prob: 100.0% | HIGH  
+  Both Teams To Score (Prediction Only) | Prob:  62.5% | MEDIUM
+
+📅 2026-05-24 | Liverpool            vs Brentford           
+------------------------------------------------------------------------------------------------------------------------
+  Over 2.5 Goals                      | Prob:  63.5% | MEDIUM
+  Home Win                            | Prob:  27.5% | LOW   
+  Draw                                | Prob:  11.7% | LOW   
+  Away Win                            | Prob:  52.5% | LOW   
+  Home Win or Draw (1X)               | Prob:  47.5% | LOW   
+  Away Win or Draw (X2)               | Prob:  72.5% | HIGH  
+  Both Teams To Score (Prediction Only) | Prob:  65.5% | MEDIUM
+
+📅 2026-05-24 | Brighton             vs Man United          
+------------------------------------------------------------------------------------------------------------------------
+  Over 2.5 Goals                      | Prob:  63.3% | MEDIUM
+  Home Win                            | Prob:  38.0% | LOW   
+  Draw                                | Prob:  40.5% | LOW   
+  Away Win                            | Prob:   7.1% | LOW   
+  Home Win or Draw (1X)               | Prob:  92.9% | HIGH  
+  Away Win or Draw (X2)               | Prob:  62.0% | MEDIUM
+  Both Teams To Score (Prediction Only) | Prob:  64.0% | MEDIUM
+
+📅 2026-05-24 | Burnley              vs Wolves              
+------------------------------------------------------------------------------------------------------------------------
+  Over 2.5 Goals                      | Prob:  65.6% | MEDIUM
+  Home Win                            | Prob:  59.1% | MEDIUM
+  Draw                                | Prob:  26.2% | LOW   
+  Away Win                            | Prob:  22.9% | LOW   
+  Home Win or Draw (1X)               | Prob:  77.1% | HIGH  
+  Away Win or Draw (X2)               | Prob:  40.9% | LOW   
+  Both Teams To Score (Prediction Only) | Prob:  61.3% | MEDIUM
+
+📅 2026-05-24 | Sunderland           vs Chelsea             
+------------------------------------------------------------------------------------------------------------------------
+  Over 2.5 Goals                      | Prob:  66.3% | MEDIUM
+  Home Win                            | Prob:  28.9% | LOW   
+  Draw                                | Prob:  45.5% | LOW   
+  Away Win                            | Prob:  18.4% | LOW   
+  Home Win or Draw (1X)               | Prob:  81.6% | HIGH  
+  Away Win or Draw (X2)               | Prob:  71.1% | HIGH  
+  Both Teams To Score (Prediction Only) | Prob:  58.2% | MEDIUM
+
+📅 2026-05-24 | Tottenham            vs Everton             
+------------------------------------------------------------------------------------------------------------------------
+  Over 2.5 Goals                      | Prob:  65.4% | MEDIUM
+  Home Win                            | Prob:  40.9% | LOW   
+  Draw                                | Prob:  25.0% | LOW   
+  Away Win                            | Prob:  24.7% | LOW   
+  Home Win or Draw (1X)               | Prob:  75.3% | HIGH  
+  Away Win or Draw (X2)               | Prob:  59.1% | MEDIUM
+  Both Teams To Score (Prediction Only) | Prob:  61.5% | MEDIUM
+
+📅 2026-05-24 | Fulham               vs Newcastle           
+------------------------------------------------------------------------------------------------------------------------
+  Over 2.5 Goals                      | Prob:  65.5% | MEDIUM
+  Home Win                            | Prob:  64.3% | MEDIUM
+  Draw                                | Prob:  28.6% | LOW   
+  Away Win                            | Prob:   8.1% | LOW   
+  Home Win or Draw (1X)               | Prob:  91.9% | HIGH  
+  Away Win or Draw (X2)               | Prob:  35.7% | LOW   
+  Both Teams To Score (Prediction Only) | Prob:  61.0% | MEDIUM
+
+📅 2026-05-24 | West Ham             vs Leeds               
+------------------------------------------------------------------------------------------------------------------------
+  Over 2.5 Goals                      | Prob:  66.4% | MEDIUM
+  Home Win                            | Prob:  15.4% | LOW   
+  Draw                                | Prob:  41.1% | LOW   
+  Away Win                            | Prob:  21.4% | LOW   
+  Home Win or Draw (1X)               | Prob:  78.6% | HIGH  
+  Away Win or Draw (X2)               | Prob:  84.6% | HIGH  
+  Both Teams To Score (Prediction Only) | Prob:  59.1% | MEDIUM
+
+========================================================================================================================
+
+
+✓ Predictions saved to: logs/predictions_20260523_223042.txt
+
+================================================================================
+✓ Prediction completed!
+End Time: 2026-05-23 22:30:42
+================================================================================
+

@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: fct_model_training_dataset
+    columns:
+      - name: match_key
+        tests:
+          - not_null
+          - unique
+      - name: home_matches_played_before
+        tests:
+          - not_null
+      - name: away_matches_played_before
+        tests:
+          - not_null
+
+  - name: fct_model_features
+    columns:
+      - name: match_key
+        tests:
+          - not_null
+          - unique
+      - name: home_attack_strength
+        tests:
+          - not_null
+      - name: home_form_strength
+        tests:
+          - not_null

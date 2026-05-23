@@ -1,0 +1,45 @@
+version: 2
+
+models:
+  - name: int_match_results
+    columns:
+      - name: match_key
+        tests:
+          - not_null
+          - unique
+      - name: total_goals
+        tests:
+          - not_null
+
+  - name: int_prediction_targets
+    columns:
+      - name: match_key
+        tests:
+          - not_null
+          - unique
+
+  - name: int_odds_canonical
+    columns:
+      - name: match_key
+        tests:
+          - not_null
+          - unique
+      - name: has_real_odds
+        tests:
+          - not_null
+      - name: odds_source
+        tests:
+          - not_null
+
+  - name: int_league_standings
+    description: "League position and standings for each team at each match date"
+    columns:
+      - name: match_date
+        tests:
+          - not_null
+      - name: team
+        tests:
+          - not_null
+      - name: league_position
+        tests:
+          - not_null

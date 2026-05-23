@@ -1,0 +1,37 @@
+[
+  {
+    "match_date": "2026-05-23",
+    "home_team": "Arsenal",
+    "away_team": "Chelsea",
+    "predictions": {
+      "Over 2.5 Goals": {
+        "probability": 0.4132,
+        "confidence": "LOW"
+      },
+      "Home Win": {
+        "probability": 0.4801,
+        "confidence": "LOW"
+      },
+      "Draw": {
+        "probability": 0.1965,
+        "confidence": "LOW"
+      },
+      "Away Win": {
+        "probability": 0.2526,
+        "confidence": "LOW"
+      },
+      "Home Win or Draw (1X)": {
+        "probability": 0.7474,
+        "confidence": "HIGH"
+      },
+      "Away Win or Draw (X2)": {
+        "probability": 0.5199,
+        "confidence": "LOW"
+      },
+      "Both Teams To Score (Prediction Only)": {
+        "probability": 0.4729,
+        "confidence": "LOW"
+      }
+    }
+  }
+]

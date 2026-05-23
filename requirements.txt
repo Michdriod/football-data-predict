@@ -1,2 +1,12 @@
 dbt-core
 dbt-postgres
+pandas
+numpy
+scikit-learn
+sqlalchemy
+psycopg2-binary
+matplotlib
+seaborn
+joblib
+python-dotenv
+requests
