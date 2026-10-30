@@ -123,3 +123,11 @@ The line-up test used the actual starting XI, which is known only about an hour 
 | ClubElo | Not tested: its API returned errors. The model already has its own Elo |
 
 **Decision:** injury flags are now saved on each pipeline run by `scripts/snapshot_injuries.py`, to `data/fpl_injury_flags.csv`. They can be tested after about a season. They are not a model input.
+
+## First-half goal market (30 October 2026)
+
+Over 0.5 goals in the first half was added on request. It happened in 73% of matches before Aug 2025 and 70% since. Holdout AUC is 0.53 and log loss 0.616, which is no better than saying "about 70%" for every match.
+
+Its probabilities are honest: 0.73 predicted against 0.74 observed in the 70-75% band. It reached 85% on only 12 picks since 2021, and 10 were correct. It has no bookmaker price in our data, so it cannot be compared with the market.
+
+With it included, the 85%+ list is 90.8% correct on 393 picks.

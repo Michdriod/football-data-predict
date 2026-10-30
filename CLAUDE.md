@@ -1277,6 +1277,17 @@ Low:    model_probability < 0.60
 
 ---
 
+## Weekly Prediction Routine
+
+When the owner says "predict this week" (or similar), this is standing approval to run it:
+
+1. Run `python scripts/predict_week.py`. It downloads the latest results, rebuilds dbt, retrains, saves injury news and predicts every market for every match in the next 7 days.
+2. Report any top picks (85%+) first, then each match's chances from the output. Say plainly if there are no top picks, if results are stale, or if a step failed.
+3. Injury news is context only. Do not adjust the model's probabilities by hand, and do not present them as adjusted.
+4. For anything else needed from the internet, use free sources only and do not scrape sites whose robots.txt forbids it (Understat). New data only goes into the model if it improves walk-forward results on unseen matches.
+
+The same predictions appear in the app (`bash scripts/run_app.sh`). Picks are information, not betting advice.
+
 ## Current Project Status
 
 Update this section as work progresses. The agent should read this before starting any session.
@@ -1326,6 +1337,7 @@ Step 23  — FastAPI + React picks app                   [✓] Complete (2026-10
 - api/main.py serves /api/picks and /api/track-record; frontend/ is the React app. Both are in addition to the layout listed at the top of this file.
 - The app shows one pick per match, only at 85%+ (PICK_THRESHOLD and select_picks in scripts/match_model.py). Never lower the bar to fill the page.
 - Historical test: 90.8% correct on 391 picks (walk-forward, logs/pick_history.csv, rebuilt by `match_model.py --evaluate`). Nearly all are win-or-draw favourites at a typical price of about 1.12, so this is not evidence of profit.
+- Over 0.5 goals in the first half is a market in scripts/match_model.py (MARKET_NAMES). It is weak: AUC 0.53-0.56, about 7 in 10 happen, and only 12 past picks reached 85% (10 correct). It has no bookmaker price, and it stays out of TARGETS because the baseline scripts train on dbt columns.
 - Each pick is saved to logs/issued_picks.csv when first shown. Never edit that file: it is the live record.
 - Odds API calls are cached for 6 hours (logs/fixtures_cache.json) to protect the free quota.
 - Free data test (see MODEL_AUDIT_2026-10.md): team xG and line-up strength gave no holdout gain, so neither is a model input. Do not scrape Understat: its robots.txt disallows it. Re-test xG after 2026-27.

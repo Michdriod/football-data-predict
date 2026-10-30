@@ -124,3 +124,21 @@ footer {
   font-size: 0.85rem;
 }
 footer strong { color: var(--ink); }
+
+.match h3 { margin-top: 2px; }
+.match .meta { margin: 0; }
+.markets { margin: 10px 0 0; padding: 0; list-style: none; }
+.markets li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+.markets strong { font-variant-numeric: tabular-nums; font-weight: 600; }
+.markets .top { color: var(--accent); font-weight: 650; }
+.markets small { font-size: 0.78rem; }
+.injuries { margin-top: 10px; color: var(--ink-secondary); font-size: 0.82rem; }
+.injuries p { margin: 0; font-weight: 600; }
+.injuries ul { margin: 4px 0 0; padding-left: 16px; }

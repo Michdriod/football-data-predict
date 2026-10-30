@@ -58,8 +58,41 @@ function PickCard({ pick }) {
   )
 }
 
-function Picks() {
-  const { loading, failed, data } = useApi('/api/picks')
+function MatchCard({ match }) {
+  const { home, away } = match.injuries
+  const news = [...home, ...away]
+
+  return (
+    <article className="card match">
+      <p className="meta">{formatKickoff(match.kickoff)}</p>
+      <h3>{match.home_team} vs {match.away_team}</h3>
+      <ul className="markets">
+        {match.markets.map((market) => (
+          <li key={market.target} className={market.is_top_pick ? 'top' : ''}>
+            <span>
+              {market.label}
+              {market.is_top_pick && <small> <span aria-hidden="true">★</span> Top pick</small>}
+            </span>
+            <strong>{percent(market.probability)}</strong>
+          </li>
+        ))}
+      </ul>
+      {news.length > 0 && (
+        <div className="injuries">
+          <p>Injury news (not included in the chances above)</p>
+          <ul>
+            {news.map((item) => (
+              <li key={item.player}>{item.player}: {item.news}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </article>
+  )
+}
+
+function Week() {
+  const { loading, failed, data } = useApi('/api/week')
 
   if (loading) return <p className="meta">Checking this week's matches…</p>
   if (failed) return <Notice>Picks could not be loaded. Check that the app server is running.</Notice>
@@ -81,7 +114,7 @@ function Picks() {
         </div>
       ) : (
         <div className="card empty">
-          <h3>No picks this week</h3>
+          <h3>No top picks this week</h3>
           <p>
             None of the {data.matches_checked} upcoming matches reached {percent(data.threshold)}.
             That is the app doing its job: it does not lower the bar to fill the page.
@@ -92,6 +125,21 @@ function Picks() {
       <p className="meta">
         {data.matches_checked} matches checked · Results up to {formatDate(data.data_through)}
       </p>
+
+      {data.matches.length > 0 && (
+        <section aria-labelledby="matches-heading">
+          <h2 id="matches-heading">All matches</h2>
+          <div className="stack">
+            {data.matches.map((match) => (
+              <MatchCard key={`${match.home_team}-${match.away_team}`} match={match} />
+            ))}
+          </div>
+          <p className="meta">
+            "Goal in the first half" is a weak prediction: it happens about 7 times in 10 and
+            the model can barely tell these matches apart.
+          </p>
+        </section>
+      )}
     </>
   )
 }
@@ -181,12 +229,12 @@ export default function App() {
     <main>
       <header>
         <h1>Premier League Picks</h1>
-        <p>Only matches where the model is at least 85% sure.</p>
+        <p>Top picks are 85%+. Every match's chances are listed below them.</p>
       </header>
 
       <section aria-labelledby="picks-heading">
-        <h2 id="picks-heading">Next 7 days</h2>
-        <Picks />
+        <h2 id="picks-heading">Top picks, next 7 days</h2>
+        <Week />
       </section>
 
       <section aria-labelledby="record-heading">
@@ -195,7 +243,7 @@ export default function App() {
       </section>
 
       <footer>
-        <strong>Sure doesn't mean profitable.</strong> These picks are mostly strong favourites
+        <strong>Sure doesn't mean profitable.</strong> Top picks are mostly strong favourites
         that pay very little, and testing found no proven way to profit from them.
         This is information, not betting advice.
       </footer>

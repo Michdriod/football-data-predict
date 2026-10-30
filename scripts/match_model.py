@@ -44,7 +44,7 @@ warnings.filterwarnings('ignore')
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import get_db_connection_string, LOGS_DIR, MODELS_DIR
+from config import get_db_connection_string, LOGS_DIR, MODELS_DIR, TARGETS
 
 MODEL_PATH = MODELS_DIR / 'match_model.joblib'
 PICK_HISTORY_PATH = LOGS_DIR / 'pick_history.csv'
@@ -56,6 +56,9 @@ GOAL_MODEL_CONFIG = {
     'rho': -0.08,              # Dixon-Coles low-score adjustment
     'window_days': 1400        # about four seasons
 }
+
+# Share of goals scored before half-time, measured on seasons before 2025-26
+FIRST_HALF_GOAL_SHARE = 0.452
 
 ELO_CONFIG = {
     'k': 22,
@@ -81,14 +84,20 @@ BASE_TARGETS = {
     'target_btts_yes': 'goal_btts',
     'target_home_win': 'goal_home',
     'target_draw': 'goal_draw',
-    'target_away_win': 'goal_away'
+    'target_away_win': 'goal_away',
+    'target_over_05_first_half': 'goal_first_half_over_05'
 }
+
+# Every market the model predicts. The first-half market stays out of TARGETS
+# because the baseline scripts train on dbt columns, and it has none.
+MARKET_NAMES = {**TARGETS, 'target_over_05_first_half': 'Over 0.5 Goals First Half'}
 
 # The app shows one pick per match, and only at this confidence or above
 PICK_THRESHOLD = 0.85
 PICK_MARKETS = [
     'target_home_win', 'target_away_win', 'target_home_win_or_draw',
-    'target_away_win_or_draw', 'target_over_25', 'target_btts_yes'
+    'target_away_win_or_draw', 'target_over_25', 'target_btts_yes',
+    'target_over_05_first_half'
 ]
 
 EVAL_DEV_START = '2021-08-01'
@@ -109,6 +118,8 @@ def load_matches():
     query = """
     SELECT match_date, match_time, home_team, away_team,
            full_time_home_goals AS home_goals, full_time_away_goals AS away_goals,
+           half_time_home_goals AS first_half_home_goals,
+           half_time_away_goals AS first_half_away_goals,
            home_shots, away_shots, home_shots_on_target, away_shots_on_target,
            home_corners, away_corners,
            avg_home_win_odds, avg_draw_odds, avg_away_win_odds,
@@ -145,6 +156,7 @@ def add_targets(df):
     df['target_away_win'] = (home < away).astype(int)
     df['target_home_win_or_draw'] = (home >= away).astype(int)
     df['target_away_win_or_draw'] = (away >= home).astype(int)
+    df['target_over_05_first_half'] = (df['first_half_home_goals'] + df['first_half_away_goals'] >= 1).astype(int)
     return df
 
 # ============================================================================
@@ -330,7 +342,8 @@ def market_probabilities(home_rate, away_rate, rho):
         'goal_btts': grid[(home > 0) & (away > 0)].sum(),
         'goal_home': grid[home > away].sum(),
         'goal_draw': grid[home == away].sum(),
-        'goal_away': grid[home < away].sum()
+        'goal_away': grid[home < away].sum(),
+        'goal_first_half_over_05': 1 - np.exp(-(home_rate + away_rate) * FIRST_HALF_GOAL_SHARE)
     }
 
 

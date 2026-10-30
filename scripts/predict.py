@@ -36,12 +36,11 @@ sys.path.insert(0, str(Path(__file__).parent))
 # Import centralized configuration
 from config import (
     LOGS_DIR,
-    PRACTICE_THRESHOLDS,
-    TARGETS
+    PRACTICE_THRESHOLDS
 )
 
 # Import the trained match model
-from match_model import add_targets, load_bundle, load_matches, predict_fixtures
+from match_model import MARKET_NAMES, add_targets, load_bundle, load_matches, predict_fixtures
 
 # Import odds fetching functions
 from fetch_odds import fetch_upcoming_fixtures, parse_odds_for_targets
@@ -129,10 +128,9 @@ def generate_prediction(home_team, away_team, match_date, bundle, odds_data=None
             'predictions': {}
         }
         
-        for target_col in TARGETS:
+        for target_col, target_name in MARKET_NAMES.items():
             proba = probabilities[target_col]
-            
-            target_name = TARGETS[target_col]
+
             
             pred_detail = {
                 'probability': float(round(proba, 4)),
@@ -252,7 +250,7 @@ def save_practice_picks(predictions, log_path=PRACTICE_LOG):
     Returns:
         int: Number of new picks logged
     """
-    target_by_name = {name: target for target, name in TARGETS.items()}
+    target_by_name = {name: target for target, name in MARKET_NAMES.items()}
     picks = [
         {
             'logged_at': datetime.now().isoformat(timespec='seconds'),
