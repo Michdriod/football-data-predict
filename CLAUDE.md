@@ -196,9 +196,8 @@ This automated script:
 - Runs dbt pipeline (dbt run + dbt test)
 - Checks if 20+ new matches added since last training
 - If yes: Trains new models on full dataset
-- Compares new vs old model performance (validation AUC)
-- Only updates models if ≥3 of 4 targets improved (98% tolerance)
-- Keeps best models always in models/saved/ (no backups needed)
+- Retrains and saves the match model
+- Does not gate on performance: run `python scripts/match_model.py --evaluate` to check it
 
 ### Load Raw Data (Manual Method)
 
@@ -243,13 +242,21 @@ dbt docs serve
 ### Train Models
 
 ```bash
-python scripts/train_models.py
+# Production model (saves models/saved/match_model.joblib)
+python scripts/match_model.py --train
+
+# Walk-forward test against bookmaker prices (logs/match_model_evaluation.csv)
+python scripts/match_model.py --evaluate
+
+# Baseline models only (Logistic Regression + Random Forest)
+python scripts/train_models.py --models logistic random_forest --skip-cv
 ```
 
 ### Run Predictions
 
 ```bash
-python scripts/predict.py --matchday 2025-04-26
+python scripts/predict.py --fetch-odds --days 7
+python scripts/predict.py --home Arsenal --away Chelsea --date 2026-11-07
 ```
 
 ---
@@ -274,6 +281,8 @@ CREATE TABLE raw_football_matches (
     "HTAG" TEXT,
     "HTR" TEXT,
     "Referee" TEXT,
+    "HxG" TEXT,
+    "AxG" TEXT,
     "HS" TEXT,
     "AS" TEXT,
     "HST" TEXT,
@@ -443,6 +452,9 @@ select
     "HTR" as half_time_result,
 
     "Referee" as referee,
+
+    nullif("HxG", '')::numeric as home_xg,
+    nullif("AxG", '')::numeric as away_xg,
 
     nullif("HS", '')::int as home_shots,
     nullif("AS", '')::int as away_shots,

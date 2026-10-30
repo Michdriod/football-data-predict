@@ -106,10 +106,14 @@ def load_test_data():
     engine = get_db_engine()
     
     query = f"""
-    SELECT *
-    FROM fct_model_features
-    WHERE match_date >= '{TEST_START_DATE}'
-    ORDER BY match_date;
+    SELECT f.*,
+           o.implied_over_25_prob AS implied_over_25_prob,
+           o.implied_home_win_prob AS implied_home_win_prob,
+           o.implied_draw_prob AS implied_draw_prob,
+           o.implied_away_win_prob AS implied_away_win_prob
+    FROM fct_model_features f
+    LEFT JOIN fct_model_training_dataset o ON f.match_key = o.match_key
+    ORDER BY f.match_date;
     """
     
     print(f"Connecting to: {DB_CONFIG['database']}")
@@ -188,7 +192,10 @@ def prepare_features(df, target_col):
         'target_over_25', 'target_under_25',
         'target_btts_yes', 'target_btts_no',
         'target_home_win', 'target_draw', 'target_away_win',
-        'target_home_win_or_draw', 'target_away_win_or_draw'
+        'target_home_win_or_draw', 'target_away_win_or_draw',
+        # Odds are for betting evaluation only, never model inputs
+        'implied_over_25_prob', 'implied_home_win_prob',
+        'implied_draw_prob', 'implied_away_win_prob'
     ]
     
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()

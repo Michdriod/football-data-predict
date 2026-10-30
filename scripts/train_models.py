@@ -34,6 +34,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.frozen import FrozenEstimator
 from sklearn.metrics import (
     roc_auc_score, brier_score_loss, log_loss,
     accuracy_score, precision_score, recall_score, f1_score,
@@ -438,11 +439,11 @@ def train_single_model(X_train, y_train, X_val, y_val, model_type='logistic', ta
         model = LogisticRegression(**MODEL_CONFIGS['logistic'])
         model.fit(X_train_scaled, y_train)
         
-        # Calibrate on validation set (modern sklearn approach)
+        # Calibrate on validation set. FrozenEstimator keeps the model fitted on
+        # the training set; without it sklearn refits a clone on validation data only.
         calibrated_model = CalibratedClassifierCV(
-            model, 
-            method='sigmoid',
-            cv=None  # Fit on validation data without prefit
+            FrozenEstimator(model),
+            method='sigmoid'
         )
         calibrated_model.fit(X_val_scaled, y_val)
         
@@ -460,11 +461,10 @@ def train_single_model(X_train, y_train, X_val, y_val, model_type='logistic', ta
         model = RandomForestClassifier(**rf_config)
         model.fit(X_train, y_train)
         
-        # Calibrate on validation set (modern sklearn approach)
+        # Calibrate on validation set (see the logistic note above)
         calibrated_model = CalibratedClassifierCV(
-            model,
-            method='isotonic',
-            cv=None  # Fit on validation data without prefit
+            FrozenEstimator(model),
+            method='isotonic'
         )
         calibrated_model.fit(X_val, y_val)
         

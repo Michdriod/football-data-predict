@@ -8,6 +8,7 @@
 ###############################################################################
 
 set -e  # Exit on any error
+set -o pipefail  # A failing command piped into tee must still count as a failure
 
 PROJECT_DIR="/Users/mac/Desktop/football-data-predict"
 LOG_FILE="$PROJECT_DIR/logs/pipeline_$(date +%Y%m%d_%H%M%S).log"
@@ -57,12 +58,6 @@ log "═════════════════════════
 
 cd "$PROJECT_DIR" || error_exit "Cannot cd to $PROJECT_DIR"
 
-# Step 1: Download missing data
-log ""
-log "Step 1: Downloading missing Premier League data..."
-$PYTHON_BIN scripts/download_data.py 2>&1 | tee -a "$LOG_FILE" || info "Download check completed (some may be up-to-date)"
-success "Data download check completed"
-
 # Step 2: Verify Python environment
 log ""
 log "Step 2: Verifying Python environment..."
@@ -99,7 +94,7 @@ info "Loading data with SEASON REFRESH mode for $CURRENT_SEASON"
 info "  - Historical seasons: append-only (not affected)"
 info "  - Current season ($CURRENT_SEASON): truncate and reload fresh"
 
-$PYTHON_BIN scripts/load_raw_data.py --data-dir data/raw/ --current-season "$CURRENT_SEASON" 2>&1 | tee -a "$LOG_FILE" || error_exit "Data load failed"
+$PYTHON_BIN scripts/load_raw_data.py --data-dir data/raw/ --season "$CURRENT_SEASON" --auto-download --no-backup 2>&1 | tee -a "$LOG_FILE" || error_exit "Data load failed"
 success "Data loaded successfully (season $CURRENT_SEASON refreshed)"
 
 # Step 4: Run dbt transformations
@@ -115,13 +110,23 @@ log "Step 5: Running data quality tests..."
 $DBT_BIN test 2>&1 | tee -a "$LOG_FILE" || error_exit "dbt tests failed"
 success "All data tests passed"
 
+# Step 5b: Retrain the match model on the refreshed data
+log ""
+log "Step 5b: Retraining match model..."
+cd "$PROJECT_DIR" || error_exit "Cannot return to project directory"
+$PYTHON_BIN scripts/match_model.py --train 2>&1 | tee -a "$LOG_FILE" || error_exit "Model training failed"
+success "Match model retrained"
+
 # Step 6: Validation query
 log ""
 log "Step 6: Final validation..."
 cd "$PROJECT_DIR" || error_exit "Cannot return to project directory"
 TRAINING_ROWS=$($PYTHON_BIN -c "
 import psycopg2
-conn = psycopg2.connect('host=localhost port=5432 user=postgres dbname=football_prediction_db')
+import sys
+sys.path.insert(0, 'scripts')
+from config import DB_CONFIG
+conn = psycopg2.connect(**{('dbname' if k == 'database' else k): v for k, v in DB_CONFIG.items()})
 cur = conn.cursor()
 cur.execute('SELECT COUNT(*) FROM fct_model_training_dataset;')
 result = cur.fetchone()[0]

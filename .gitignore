@@ -259,3 +259,7 @@ notebooks/scratch/
 # Local configuration overrides
 config.local.py
 settings.local.py
+
+# dbt models are source code; keep them under version control
+!football_prediction/models/**/*.sql
+!football_prediction/tests/*.sql

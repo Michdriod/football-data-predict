@@ -3,6 +3,7 @@ dbt-postgres
 pandas
 numpy
 scikit-learn
+scipy
 sqlalchemy
 psycopg2-binary
 matplotlib

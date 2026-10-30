@@ -25,7 +25,19 @@
     "Burnley": "Burnley",
     "Luton Town": "Luton",
     "Ipswich Town": "Ipswich",
-    "Norwich City": "Norwich"
+    "Norwich City": "Norwich",
+    "Coventry City": "Coventry",
+    "Hull City": "Hull",
+    "Sunderland": "Sunderland",
+    "Stoke City": "Stoke",
+    "Swansea City": "Swansea",
+    "Cardiff City": "Cardiff",
+    "West Bromwich Albion": "West Brom",
+    "Huddersfield Town": "Huddersfield",
+    "Watford": "Watford",
+    "Middlesbrough": "Middlesbrough",
+    "Wrexham": "Wrexham",
+    "Birmingham City": "Birmingham"
   },
   "database_to_api": {
     "Man United": "Manchester United",
@@ -52,13 +64,25 @@
     "Burnley": "Burnley",
     "Luton": "Luton Town",
     "Ipswich": "Ipswich Town",
-    "Norwich": "Norwich City"
+    "Norwich": "Norwich City",
+    "Coventry": "Coventry City",
+    "Hull": "Hull City",
+    "Sunderland": "Sunderland",
+    "Stoke": "Stoke City",
+    "Swansea": "Swansea City",
+    "Cardiff": "Cardiff City",
+    "West Brom": "West Bromwich Albion",
+    "Huddersfield": "Huddersfield Town",
+    "Watford": "Watford",
+    "Middlesbrough": "Middlesbrough",
+    "Wrexham": "Wrexham",
+    "Birmingham": "Birmingham City"
   },
   "_notes": {
     "description": "Team name mapping between The Odds API and football-data.co.uk database",
     "api_source": "The Odds API returns full team names (e.g., Manchester United)",
     "database_source": "football-data.co.uk CSV files use shortened names (e.g., Man United)",
     "usage": "Loaded by fetch_odds.py to map API responses to database team names",
-    "last_updated": "2026-05-22"
+    "last_updated": "2026-10-30"
   }
 }

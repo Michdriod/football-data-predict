@@ -110,29 +110,21 @@ def truncate_season(season_code):
     cur = conn.cursor()
     
     try:
-        # Extract year from season code to match dates
-        # E.g., '2025-26' → year 2025 (Aug 2025 - Jul 2026)
+        # A season runs 1 Aug start_year to 31 Jul (start_year+1), so '2025-26' is
+        # Aug 2025 - Jul 2026. Match on the date range, not the calendar year:
+        # deleting by year would also remove half of each neighbouring season.
         start_year = int(season_code.split('-')[0])
-        
-        # Dates from Aug start_year to Jul (start_year+1)
-        # Since dates in football-data are DD/MM/YYYY, delete rows where year matches
         
         print(f"\n  Truncating season {season_code} from database...")
         
-        # Delete rows where the year of the date falls within the season
-        # Format: DD/MM/YYYY, so year is at positions 7-10 (1-indexed)
         delete_query = """
         DELETE FROM raw_football_matches
-        WHERE CASE 
-            WHEN "Date" ~ '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' THEN
-                CAST(SUBSTRING("Date" FROM 7 FOR 4) AS INTEGER)
-            ELSE 0
-        END IN (%s, %s)
+        WHERE "Date" ~ '^[0-9]{2}/[0-9]{2}/[0-9]{4}$'
+          AND to_date("Date", 'DD/MM/YYYY') >= make_date(%s, 8, 1)
+          AND to_date("Date", 'DD/MM/YYYY') < make_date(%s, 8, 1)
         """
         
-        # If season is 2025-26, delete matches from 2025 and 2026
-        years_to_delete = (start_year, start_year + 1)
-        cur.execute(delete_query, years_to_delete)
+        cur.execute(delete_query, (start_year, start_year + 1))
         
         deleted_count = cur.rowcount
         conn.commit()
@@ -234,11 +226,12 @@ def download_season_csv(season_code, data_dir):
     # Construct filename and URL
     filename = f"E0_{season_code}.csv"
     filepath = os.path.join(data_dir, filename)
-    url = f"https://www.football-data.co.uk/mmz4281/{filename}"
+    start_year, end_year = season_code.split('-')
+    url = f"https://www.football-data.co.uk/mmz4281/{start_year[2:]}{end_year}/E0.csv"
     
     try:
         # Download with timeout
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=30)
         
         if response.status_code == 404:
             return False, None, f"File not found on server (404): {url}"
@@ -248,8 +241,8 @@ def download_season_csv(season_code, data_dir):
         
         # Save to file
         os.makedirs(data_dir, exist_ok=True)
-        with open(filepath, 'w') as f:
-            f.write(response.text)
+        with open(filepath, 'wb') as f:
+            f.write(response.content)
         
         # Verify file was written
         if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
@@ -495,6 +488,13 @@ def load_to_database(df, mode='append'):
     
     # Load to database
     engine = get_db_engine()
+    
+    # football-data.co.uk adds bookmaker columns over time; keep to the raw table's schema
+    table_columns = pd.read_sql_query('SELECT * FROM raw_football_matches LIMIT 0', engine).columns
+    extra_columns = [col for col in df_clean.columns if col not in table_columns]
+    if extra_columns:
+        print(f"  ⓘ Skipping {len(extra_columns)} columns not in raw table: {extra_columns}")
+        df_clean = df_clean.drop(columns=extra_columns)
     
     try:
         print("\nLoading data...")

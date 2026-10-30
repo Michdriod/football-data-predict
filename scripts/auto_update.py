@@ -7,19 +7,14 @@ This script automates the entire update workflow:
 2. Run dbt transformation pipeline
 3. Check if retraining is needed (20+ new matches)
 4. Train new models if threshold met
-5. Compare new vs old model performance
-6. Only update models if performance improved
+5. Save the retrained match model
 
 Usage:
     python scripts/auto_update.py --csv data/raw/E0_2025-26.csv
     python scripts/auto_update.py --csv data/raw/E0_2025-26.csv --force-retrain
-    python scripts/auto_update.py --csv data/raw/E0_2025-26.csv --no-backup
 
 Features:
-- Smart conditional updates (only replaces better models)
-- Automatic quality control (prevents model degradation)
 - Comprehensive logging and progress tracking
-- No storage overhead (no backups unless performance degrades)
 
 Author: Football Prediction System
 Date: 2026-05-22
@@ -29,13 +24,10 @@ import os
 import sys
 import argparse
 import subprocess
-import glob
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-import numpy as np
-import joblib
 from sqlalchemy import create_engine
 import psycopg2
 
@@ -47,10 +39,11 @@ from config import (
     DB_CONFIG,
     get_db_connection_string,
     RETRAIN_THRESHOLD,
-    PERFORMANCE_TOLERANCE,
-    MODELS_DIR,
     DBT_PROJECT_DIR
 )
+
+from load_raw_data import load_to_database, truncate_season
+from match_model import train as train_match_model
 
 # ============================================================================
 # DATABASE UTILITIES
@@ -129,57 +122,14 @@ def load_csv_to_database(csv_path, season_code=None):
     df = pd.read_csv(csv_path)
     print(f"  ✓ Read {len(df):,} matches from CSV")
     
-    # Delete existing season data
+    # Delete existing season data, then load the fresh copy
     print(f"\n  Deleting existing {season_code} data from database...")
-    conn = get_db_connection()
-    cur = conn.cursor()
+    truncate_season(season_code)
     
-    try:
-        # Extract years from season code
-        start_year = int(season_code.split('-')[0])
-        years_to_delete = (start_year, start_year + 1)
-        
-        delete_query = """
-        DELETE FROM raw_football_matches
-        WHERE CASE 
-            WHEN "Date" ~ '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' THEN
-                CAST(SUBSTRING("Date" FROM 7 FOR 4) AS INTEGER)
-            ELSE 0
-        END IN (%s, %s)
-        """
-        
-        cur.execute(delete_query, years_to_delete)
-        deleted_count = cur.rowcount
-        conn.commit()
-        
-        print(f"  ✓ Deleted {deleted_count:,} existing rows for season {season_code}")
-        
-    except Exception as e:
-        print(f"  ⚠️  Could not delete existing data: {e}")
-        conn.rollback()
-    finally:
-        cur.close()
-        conn.close()
-    
-    # Load new data
     print(f"\n  Loading {len(df):,} new matches to database...")
-    engine = get_db_engine()
-    
-    try:
-        df.to_sql(
-            'raw_football_matches',
-            engine,
-            if_exists='append',
-            index=False,
-            method='multi',
-            chunksize=1000
-        )
-        print(f"  ✓ Successfully loaded {len(df):,} matches")
-        return len(df)
-        
-    except Exception as e:
-        print(f"  ❌ Error loading data: {e}")
-        raise
+    load_to_database(df)
+    print(f"  ✓ Successfully loaded {len(df):,} matches")
+    return len(df)
 
 # ============================================================================
 # DBT PIPELINE
@@ -256,189 +206,6 @@ def run_dbt_pipeline():
 # ============================================================================
 # MODEL TRAINING
 # ============================================================================
-
-def get_latest_model_metadata():
-    """
-    Load metadata from the most recent trained model.
-    
-    Returns:
-        dict: Metadata dictionary or None if no models exist
-    """
-    if not MODELS_DIR.exists():
-        return None
-    
-    # Find all metadata files
-    metadata_files = sorted(MODELS_DIR.glob('training_metadata_*.pkl'))
-    
-    if not metadata_files:
-        return None
-    
-    # Load the most recent one
-    latest_metadata_file = metadata_files[-1]
-    
-    try:
-        metadata = joblib.load(latest_metadata_file)
-        return metadata
-    except Exception as e:
-        print(f"⚠️  Could not load metadata from {latest_metadata_file}: {e}")
-        return None
-
-def train_new_models():
-    """
-    Train new models using train_models.py logic.
-    
-    Returns:
-        dict: Training results with metrics
-    """
-    print("\n" + "="*80)
-    print("STEP 4: TRAINING NEW MODELS")
-    print("="*80)
-    
-    print("\n  Running training script...")
-    
-    try:
-        # Import training functions
-        from train_models import (
-            load_training_data,
-            prepare_data_for_training,
-            split_data,
-            train_all_models
-        )
-        
-        # Load data
-        print("\n  Loading training data from database...")
-        df = load_training_data()
-        
-        if df is None or len(df) == 0:
-            print("\n  ❌ Error: No training data available")
-            return None
-        
-        # Prepare data
-        print("\n  Preparing data for training...")
-        df = prepare_data_for_training(df)
-        
-        # Split data
-        print("\n  Splitting data (time-based)...")
-        train_df, val_df, test_df = split_data(df)
-        
-        print(f"\n  Train: {len(train_df):,} matches")
-        print(f"  Val:   {len(val_df):,} matches")
-        print(f"  Test:  {len(test_df):,} matches")
-        
-        # Train models
-        print("\n  Training models (Random Forest only for production)...")
-        results = train_all_models(train_df, val_df, model_types=['random_forest'])
-        
-        if results is None or not results:
-            print("\n  ❌ Error: Training failed")
-            return None
-        
-        return results
-        
-    except Exception as e:
-        print(f"\n  ❌ Error training models: {e}")
-        import traceback
-        traceback.print_exc()
-        return None
-
-def compare_model_performance(old_metadata, new_results):
-    """
-    Compare old and new model performance.
-    
-    Args:
-        old_metadata: Metadata from previous training
-        new_results: Results from new training
-        
-    Returns:
-        tuple: (should_update, comparison_report)
-    """
-    print("\n" + "="*80)
-    print("STEP 5: COMPARING MODEL PERFORMANCE")
-    print("="*80)
-    
-    if old_metadata is None:
-        print("\n  ℹ️  No previous models found - this is the first training")
-        return True, "First training - no comparison needed"
-    
-    # Extract old metrics (this is tricky since old metadata structure may vary)
-    # We'll need to load the actual old models and check their performance
-    
-    print("\n  Comparing validation AUC scores:")
-    print("  " + "-"*60)
-    print(f"  {'Target':<25} {'Old AUC':<12} {'New AUC':<12} {'Change'}")
-    print("  " + "-"*60)
-    
-    targets = ['target_over_25', 'target_home_win', 'target_draw', 'target_away_win', 
-               'target_home_win_or_draw', 'target_away_win_or_draw', 'target_btts_yes']
-    target_names = ['Over 2.5 Goals', 'BTTS Yes', 'Home Not Lose (1X)', 'Away Not Lose (X2)']
-    
-    improvements = []
-    comparison_lines = []
-    
-    for target_col, target_name in zip(targets, target_names):
-        # Get new performance
-        if target_col in new_results:
-            # Get Random Forest model metrics
-            rf_metrics = new_results[target_col]['models'].get('random_forest', {}).get('metrics', {})
-            new_auc = rf_metrics.get('val_auc', 0.0)
-        else:
-            new_auc = 0.0
-        
-        # Try to load old model and get its metadata
-        # For now, we'll use a simplified approach: assume 0.70 as baseline
-        # In production, you'd load the old model file and extract stored metrics
-        old_auc = 0.70  # Baseline assumption
-        
-        # Calculate change
-        change = new_auc - old_auc
-        change_pct = (change / old_auc * 100) if old_auc > 0 else 0
-        
-        # Determine if improved
-        improved = new_auc >= old_auc * PERFORMANCE_TOLERANCE
-        improvements.append(improved)
-        
-        # Format output
-        status = "✓" if improved else "✗"
-        change_str = f"+{change:.4f} ({change_pct:+.1f}%)" if change >= 0 else f"{change:.4f} ({change_pct:.1f}%)"
-        
-        line = f"  {target_name:<25} {old_auc:.4f}      {new_auc:.4f}      {change_str} {status}"
-        print(line)
-        comparison_lines.append(line)
-    
-    print("  " + "-"*60)
-    
-    # Decision: update if at least 3 out of 4 models improved
-    should_update = sum(improvements) >= 3
-    
-    if should_update:
-        print(f"\n  ✅ Performance maintained or improved ({sum(improvements)}/4 targets)")
-        print("     → Models WILL be updated")
-    else:
-        print(f"\n  ⚠️  Performance degraded ({sum(improvements)}/4 targets)")
-        print("     → Models will NOT be updated (keeping old models)")
-    
-    comparison_report = "\n".join(comparison_lines)
-    return should_update, comparison_report
-
-def save_new_models(results):
-    """
-    Save newly trained models.
-    
-    Args:
-        results: Training results dictionary
-    """
-    print("\n" + "="*80)
-    print("SAVING NEW MODELS")
-    print("="*80)
-    
-    try:
-        from train_models import save_models
-        save_models(results, output_dir=str(MODELS_DIR))
-        print("\n  ✅ New models saved successfully")
-        return True
-    except Exception as e:
-        print(f"\n  ❌ Error saving models: {e}")
-        return False
 
 # ============================================================================
 # MAIN WORKFLOW
@@ -538,25 +305,12 @@ Examples:
         print("="*80)
         return 0
     
-    # Step 4: Train new models
-    new_results = train_new_models()
-    
-    if new_results is None:
-        print("\n❌ FAILED at Step 4: Model training failed")
-        return 1
-    
-    # Step 5: Compare with old models
-    old_metadata = get_latest_model_metadata()
-    should_update, comparison_report = compare_model_performance(old_metadata, new_results)
-    
-    # Step 6: Save models (only if performance improved)
-    if should_update:
-        success = save_new_models(new_results)
-        if not success:
-            print("\n❌ FAILED at Step 6: Could not save models")
-            return 1
-    else:
-        print("\n  ℹ️  Models NOT updated (keeping old models due to performance degradation)")
+    # Step 4: Retrain. The design is fixed, so more data replaces the saved model;
+    # run match_model.py --evaluate to re-check it against the market.
+    print("\n" + "="*80)
+    print("STEP 4: RETRAINING MATCH MODEL")
+    print("="*80)
+    train_match_model()
     
     # Summary
     print("\n" + "="*80)
@@ -566,7 +320,6 @@ Examples:
     print(f"✅ dbt pipeline:     {'Completed' if not args.skip_dbt else 'Skipped'}")
     print(f"✅ New matches:      {new_matches:,}")
     print(f"✅ Retrained:        {'Yes' if should_retrain else 'No'}")
-    print(f"✅ Models updated:   {'Yes' if should_update and should_retrain else 'No'}")
     
     print(f"\n📊 Total matches in system: {updated_count:,}")
     print(f"\nCompleted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
