@@ -43,7 +43,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=football_prediction_db
 DB_USER=postgres
-DB_PASSWORD=michwaleh  # ← Loaded from .env, not hardcoded
+DB_PASSWORD=your_password_here  # ← Loaded from .env, not hardcoded
 
 RETRAIN_THRESHOLD=20
 PERFORMANCE_TOLERANCE=0.98
@@ -85,7 +85,7 @@ DB_CONFIG = {
     'port': 5432,
     'database': 'football_prediction_db',
     'user': 'postgres',
-    'password': 'michwaleh'  # ← HARDCODED PASSWORD
+    'password': 'your_password_here'  # ← HARDCODED PASSWORD
 }
 ```
 
@@ -164,7 +164,7 @@ usage: predict.py [-h] [--days DAYS] [--json] [--date DATE]
 
 ### Test 4: No Hardcoded Passwords Remain
 ```bash
-$ grep -r "michwaleh" scripts/
+$ grep -r "your_password_here" scripts/
 (No matches found)
 ✓ All hardcoded passwords removed
 ```
@@ -211,7 +211,7 @@ nano .env  # or vim, code, etc.
 DB_PASSWORD=your_password_here
 
 # To your actual password:
-DB_PASSWORD=michwaleh
+DB_PASSWORD=your_password_here
 ```
 
 ### **Step 3: Test Configuration**

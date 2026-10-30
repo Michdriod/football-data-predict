@@ -23,17 +23,14 @@ Key guardrails:
 import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
+import sys
 import warnings
+from pathlib import Path
 warnings.filterwarnings('ignore')
 
-# Database connection
-DB_CONFIG = {
-    'host': 'localhost',
-    'port': 5432,
-    'database': 'football_prediction_db',
-    'user': 'postgres',
-    'password': 'michwaleh'
-}
+# Database connection settings come from .env via scripts/config.py
+sys.path.insert(0, str(Path(__file__).parent / 'scripts'))
+from config import DB_CONFIG
 
 def get_engine():
     connection_string = (
