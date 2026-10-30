@@ -50,6 +50,13 @@ STALE_DATA_DAYS = 10
 MIN_MINUTES_FOR_NEWS = 270     # three full matches; leaves out fringe players
 PLAYERS_PER_TEAM = 3
 
+# Caution label. Teams at these levels did about 2-4 points worse than predicted
+# (Nov 2022 on), which is not proven, so it warns without changing probabilities.
+CAUTION_REGULARS_OUT = 3
+CAUTION_DEFENDERS_OUT = 2
+REGULAR_START_SHARE = 0.5      # started at least half of this season's matches
+MIN_MATCHES_FOR_CAUTION = 4
+
 # Which price applies to each market. Double chance has no direct price.
 ODDS_KEYS = {
     'target_home_win': 'home_win',
@@ -155,30 +162,78 @@ def get_fixtures(force_refresh=False):
     return cache, False
 
 
-def get_injury_news():
+def latest_likely_absentees():
     """
-    Latest injury news for regular players, grouped by team.
+    Players in the newest snapshot who are likely to miss the next match.
 
     Returns:
-        tuple: (dict of team to news list, snapshot time or None)
+        tuple: (DataFrame of players, snapshot time), both None without snapshots
     """
     if not SNAPSHOT_PATH.exists():
-        return {}, None
+        return None, None
 
     flags = pd.read_csv(SNAPSHOT_PATH)
     latest = flags['snapshot_at'].max()
     flags = flags[flags['snapshot_at'] == latest]
-
     doubtful = (flags['status'] == 'd') & (flags['chance_next_round'].fillna(100) <= 50)
-    regulars = flags[(flags['status'].isin(['i', 's']) | doubtful) &
-                     (flags['minutes'] >= MIN_MINUTES_FOR_NEWS)]
+    return flags[flags['status'].isin(['i', 's']) | doubtful], latest
 
-    news = {
+
+def team_cautions(absentees):
+    """
+    Warn about teams missing enough regulars to be worth a second look.
+
+    Args:
+        absentees (pd.DataFrame): Output of latest_likely_absentees()
+
+    Returns:
+        dict: Team name to caution text, only for teams that qualify
+    """
+    if absentees is None:
+        return {}
+
+    matches = load_matches()
+    played_this_season = matches[matches['season'] == matches['season'].max()]
+    games = pd.concat([played_this_season['home_team'], played_this_season['away_team']]).value_counts()
+
+    cautions = {}
+    for team, players in absentees.groupby('team'):
+        played = games.get(team, 0)
+        if played < MIN_MATCHES_FOR_CAUTION:
+            continue
+        regulars = players[players['starts'] >= played * REGULAR_START_SHARE]
+        defenders = regulars[regulars['position'].isin(['DEF', 'GKP'])]
+
+        reasons = []
+        if len(regulars) >= CAUTION_REGULARS_OUT:
+            reasons.append(f"{len(regulars)} regulars likely out")
+        if len(defenders) >= CAUTION_DEFENDERS_OUT:
+            reasons.append(f"{len(defenders)} defenders or keepers likely out")
+        if reasons:
+            cautions[team] = f"{team}: {' and '.join(reasons)}"
+    return cautions
+
+
+def get_injury_news(absentees):
+    """
+    Injury news for regular players, grouped by team.
+
+    Args:
+        absentees (pd.DataFrame): Output of latest_likely_absentees()
+
+    Returns:
+        dict: Team name to news list
+    """
+    if absentees is None:
+        return {}
+
+    regulars = absentees[absentees['minutes'] >= MIN_MINUTES_FOR_NEWS]
+
+    return {
         team: [{'player': row.player, 'news': row.news if isinstance(row.news, str) else 'Unavailable'}
                for row in group.nlargest(PLAYERS_PER_TEAM, 'minutes').itertuples()]
         for team, group in regulars.groupby('team')
     }
-    return news, latest
 
 
 def save_issued_picks(picks):
@@ -187,6 +242,8 @@ def save_issued_picks(picks):
         return
 
     new_picks = pd.DataFrame(picks)[['match_date', 'home_team', 'away_team', 'target', 'probability', 'price']]
+    # Kept so flagged picks can be compared with unflagged ones later
+    new_picks['had_caution'] = [bool(pick['cautions']) for pick in picks]
     new_picks.insert(0, 'issued_at', datetime.now(timezone.utc).isoformat(timespec='seconds'))
     match_columns = ['match_date', 'home_team', 'away_team']
 
@@ -213,7 +270,9 @@ def build_week(force_refresh=False):
                 if datetime.fromisoformat(f['commence_time'].replace('Z', '+00:00')) > now]
     fixtures.sort(key=lambda f: f['commence_time'])
 
-    injury_news, injuries_checked_at = get_injury_news()
+    absentees, injuries_checked_at = latest_likely_absentees()
+    injury_news = get_injury_news(absentees)
+    cautions = team_cautions(absentees)
     matches, picks = [], []
 
     if fixtures:
@@ -240,7 +299,8 @@ def build_week(force_refresh=False):
                 'home_team': home,
                 'away_team': away,
                 'markets': markets,
-                'injuries': {'home': injury_news.get(home, []), 'away': injury_news.get(away, [])}
+                'injuries': {'home': injury_news.get(home, []), 'away': injury_news.get(away, [])},
+                'cautions': [cautions[team] for team in (home, away) if team in cautions]
             }
             matches.append(match)
 
@@ -252,7 +312,8 @@ def build_week(force_refresh=False):
                         'match_date': match['match_date'],
                         'kickoff': match['kickoff'],
                         'home_team': home,
-                        'away_team': away
+                        'away_team': away,
+                        'cautions': match['cautions']
                     })
 
         save_issued_picks(picks)
@@ -288,9 +349,13 @@ def print_week(week):
     print(f"\nTOP PICKS ({week['threshold']:.0%}+): {len(week['picks'])}")
     for pick in week['picks']:
         print(f"  {pick['home_team']} vs {pick['away_team']}: {pick['pick']} {pick['probability']:.0%}")
+        for caution in pick['cautions']:
+            print(f"    ⚠️  Caution: {caution}")
 
     for match in week['matches']:
         print(f"\n{match['match_date']}  {match['home_team']} vs {match['away_team']}")
+        for caution in match['cautions']:
+            print(f"  ⚠️  Caution: {caution}")
         for market in match['markets']:
             flag = '  <- top pick' if market['is_top_pick'] else ''
             print(f"  {market['label']:<40} {market['probability']:>4.0%}{flag}")

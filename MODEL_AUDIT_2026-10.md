@@ -131,3 +131,17 @@ Over 0.5 goals in the first half was added on request. It happened in 73% of mat
 Its probabilities are honest: 0.73 predicted against 0.74 observed in the 70-75% band. It reached 85% on only 12 picks since 2021, and 10 were correct. It has no bookmaker price in our data, so it cannot be compared with the market.
 
 With it included, the 85%+ list is 90.8% correct on 393 picks.
+
+## Absences and the caution label (30 October 2026)
+
+Checked on 2,605 team performances from Nov 2022: did teams with absences do worse than the model predicted?
+
+| Situation | Cases | Actual win rate | Predicted | 90% range of the gap |
+|---|---|---|---|---|
+| 3+ regulars out | 536 | 37.1% | 39.5% | -5.6 to +0.7 points |
+| 2+ defenders or keeper out | 404 | 33.9% | 37.5% | -7.3 to +0.1 points |
+| Both top attackers out | 80 | 32.5% | 35.9% | -11.4 to +4.5 points |
+
+The direction fits the idea that absences matter, but no gap is firmly proven and several cuts were tried. These use actual line-ups. Stars already missing the previous match gave inconsistent results: -4.9 points before Aug 2025 and +5.8 since.
+
+**Decision:** the app shows a caution label at 3+ regulars or 2+ defenders or keepers likely out, using Fantasy Premier League status. A regular has started at least half of the season's matches. Probabilities are not changed. Each issued pick records `had_caution`, so flagged picks can be compared with others.

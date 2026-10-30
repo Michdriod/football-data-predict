@@ -1283,7 +1283,7 @@ When the owner says "predict this week" (or similar), this is standing approval 
 
 1. Run `python scripts/predict_week.py`. It downloads the latest results, rebuilds dbt, retrains, saves injury news and predicts every market for every match in the next 7 days.
 2. Report any top picks (85%+) first, then each match's chances from the output. Say plainly if there are no top picks, if results are stale, or if a step failed.
-3. Injury news is context only. Do not adjust the model's probabilities by hand, and do not present them as adjusted.
+3. Injury news is context only. Do not adjust the model's probabilities by hand, and do not present them as adjusted. Report any caution labels (3+ regulars or 2+ defenders/keepers likely out) alongside the match.
 4. For anything else needed from the internet, use free sources only and do not scrape sites whose robots.txt forbids it (Understat). New data only goes into the model if it improves walk-forward results on unseen matches.
 
 The same predictions appear in the app (`bash scripts/run_app.sh`). Picks are information, not betting advice.

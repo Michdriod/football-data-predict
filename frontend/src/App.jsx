@@ -34,6 +34,19 @@ function Notice({ children }) {
   )
 }
 
+function Cautions({ items }) {
+  if (!items.length) return null
+
+  return (
+    <div className="caution">
+      {items.map((item) => (
+        <p key={item}><span aria-hidden="true">⚠</span> Caution: {item}</p>
+      ))}
+      <small>Teams like this have done slightly worse than predicted. The chances here are not adjusted.</small>
+    </div>
+  )
+}
+
 function PickCard({ pick }) {
   const winsPerLoss = pick.price > 1 ? Math.round(1 / (pick.price - 1)) : null
 
@@ -54,6 +67,7 @@ function PickCard({ pick }) {
           {winsPerLoss ? ` One miss cancels about ${winsPerLoss} correct picks.` : ''}
         </p>
       )}
+      <div className="pick-caution"><Cautions items={pick.cautions} /></div>
     </article>
   )
 }
@@ -66,6 +80,7 @@ function MatchCard({ match }) {
     <article className="card match">
       <p className="meta">{formatKickoff(match.kickoff)}</p>
       <h3>{match.home_team} vs {match.away_team}</h3>
+      <Cautions items={match.cautions} />
       <ul className="markets">
         {match.markets.map((market) => (
           <li key={market.target} className={market.is_top_pick ? 'top' : ''}>

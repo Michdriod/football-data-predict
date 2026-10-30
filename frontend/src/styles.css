@@ -142,3 +142,16 @@ footer strong { color: var(--ink); }
 .injuries { margin-top: 10px; color: var(--ink-secondary); font-size: 0.82rem; }
 .injuries p { margin: 0; font-weight: 600; }
 .injuries ul { margin: 4px 0 0; padding-left: 16px; }
+
+.caution {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  font-size: 0.85rem;
+}
+.caution p { margin: 0; font-weight: 600; }
+.caution small { display: block; margin-top: 2px; }
+.pick-caution { grid-column: 1 / -1; }
+.pick-caution:empty { display: none; }
