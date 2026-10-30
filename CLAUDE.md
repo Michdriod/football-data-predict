@@ -1454,8 +1454,6 @@ Example of incorrect behaviour:
 - Half-time / full-time prediction
 - Live in-play prediction
 - Multi-league generalized model
-- User-facing dashboard (build after data pipeline is stable)
-- FastAPI (build after model training is complete)
 
 ---
 

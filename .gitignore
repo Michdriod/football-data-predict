@@ -263,3 +263,9 @@ settings.local.py
 # dbt models are source code; keep them under version control
 !football_prediction/models/**/*.sql
 !football_prediction/tests/*.sql
+
+# Frontend dependencies
+node_modules/
+
+# Local app state
+logs/fixtures_cache.json

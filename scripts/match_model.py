@@ -47,6 +47,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from config import get_db_connection_string, LOGS_DIR, MODELS_DIR
 
 MODEL_PATH = MODELS_DIR / 'match_model.joblib'
+PICK_HISTORY_PATH = LOGS_DIR / 'pick_history.csv'
 
 # Goal model settings, tuned on seasons before 2025-26 only
 GOAL_MODEL_CONFIG = {
@@ -82,6 +83,13 @@ BASE_TARGETS = {
     'target_draw': 'goal_draw',
     'target_away_win': 'goal_away'
 }
+
+# The app shows one pick per match, and only at this confidence or above
+PICK_THRESHOLD = 0.85
+PICK_MARKETS = [
+    'target_home_win', 'target_away_win', 'target_home_win_or_draw',
+    'target_away_win_or_draw', 'target_over_25', 'target_btts_yes'
+]
 
 EVAL_DEV_START = '2021-08-01'
 EVAL_HOLDOUT_START = '2025-08-01'
@@ -399,6 +407,27 @@ def stacked_market_probabilities(stackers, frame):
     out['target_away_win_or_draw'] = 1 - out['target_home_win']
     return out
 
+def select_picks(probabilities):
+    """
+    Choose at most one market per match at or above PICK_THRESHOLD.
+
+    When several qualify, the lowest probability wins: it still clears the bar
+    and pays the most (a home win rather than home win or draw).
+
+    Args:
+        probabilities (pd.DataFrame): One probability column per target
+
+    Returns:
+        pd.DataFrame: Columns target and probability, indexed by match
+    """
+    markets = probabilities[PICK_MARKETS]
+    qualifying = markets.where(markets >= PICK_THRESHOLD)
+    picked = qualifying.dropna(how='all')
+    return pd.DataFrame({
+        'target': picked.idxmin(axis=1),
+        'probability': picked.min(axis=1)
+    })
+
 # ============================================================================
 # EVALUATION
 # ============================================================================
@@ -448,6 +477,29 @@ def walk_forward(df):
     return pd.concat(predictions)
 
 
+def save_pick_history(df, model_probabilities, benchmarks):
+    """Record what the app's pick rule would have said, using pre-match predictions only."""
+    picks = select_picks(model_probabilities)
+    matches = df.loc[picks.index]
+    closing = [benchmarks[f'closing|{target}'].get(i, np.nan) if f'closing|{target}' in benchmarks else np.nan
+               for i, target in zip(picks.index, picks['target'])]
+    history = pd.DataFrame({
+        'match_date': matches['match_date'].dt.date,
+        'season': matches['season'].astype(int),
+        'home_team': matches['home_team'],
+        'away_team': matches['away_team'],
+        'home_goals': matches['home_goals'].astype(int),
+        'away_goals': matches['away_goals'].astype(int),
+        'target': picks['target'],
+        'probability': picks['probability'].round(4),
+        'won': [int(df.loc[i, target]) for i, target in zip(picks.index, picks['target'])],
+        'fair_closing_odds': (1 / pd.Series(closing, index=picks.index)).round(3)
+    })
+    history.to_csv(PICK_HISTORY_PATH, index=False)
+    print(f"\n✓ Pick history: {history['won'].mean():.1%} correct on {len(history):,} picks ({PICK_HISTORY_PATH.name})")
+    return history
+
+
 def evaluate():
     """Compare the model with the market on the development and holdout periods."""
     print("\nLoading matches and building features...")
@@ -461,6 +513,7 @@ def evaluate():
     print("Walking the stacker forward...")
     model_probabilities = walk_forward(df)
     benchmarks = market_benchmarks(df)
+    save_pick_history(df, model_probabilities, benchmarks)
     goal_columns = {**BASE_TARGETS,
                     'target_home_win_or_draw': None, 'target_away_win_or_draw': None}
 

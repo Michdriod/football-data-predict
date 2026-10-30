@@ -114,7 +114,7 @@ success "All data tests passed"
 log ""
 log "Step 5b: Retraining match model..."
 cd "$PROJECT_DIR" || error_exit "Cannot return to project directory"
-$PYTHON_BIN scripts/match_model.py --train 2>&1 | tee -a "$LOG_FILE" || error_exit "Model training failed"
+$PYTHON_BIN scripts/match_model.py --evaluate --train 2>&1 | tee -a "$LOG_FILE" || error_exit "Model training failed"
 success "Match model retrained"
 
 # Step 5c: Log practice picks at current prices. A failed odds call must not fail the run.
