@@ -96,3 +96,30 @@ Compared with the research run on data from 2014-15, the shipped model has less 
 - Nothing is committed yet.
 - `raw_football_matches_backup_20261030_121210` was kept in the database as a safety copy.
 - `src_cashlink_customers` and `stg_cashlink_customers` are unrelated tables in the football database. They were left alone.
+
+## Free data test (30 October 2026)
+
+The question: does free extra data improve predictions on matches the model has not seen?
+
+**Result: no. Nothing was added to the live model.** Lower log loss is better, and differences are compared with the current model. The test used 809 matches from Aug 2024, with every version trained on the same matches from Jan 2023.
+
+| Version | 2024-25 | Aug 2025 on (holdout) | 85%+ picks correct, all 809 matches |
+|---|---|---|---|
+| Current model | 0.6221 | 0.6378 | 88.6% of 185 |
+| Add team xG | -0.0025 (better) | +0.0012 (worse) | 90.1% of 182 |
+| Add line-up strength, best case | -0.0007 | +0.0008 | 88.0% of 184 |
+| Add both | -0.0030 | +0.0017 | 88.4% of 181 |
+
+On the holdout, every 90% interval for the change includes zero. The small 2024-25 gain did not repeat, so it is treated as noise.
+
+The line-up test used the actual starting XI, which is known only about an hour before kick-off, so it is a best case. It is one simple measure of who was missing, not proof that line-ups never matter. Training history was also short, so xG is worth re-testing after 2026-27.
+
+| Source | Finding |
+|---|---|
+| Understat | Ruled out. Its robots.txt blocks all automated access |
+| vaastav FPL archive | Free, MIT licence, player data to 2026-27, with xG from Nov 2022. It lags results by about two weeks |
+| Fantasy Premier League API | Free and unofficial, with live injury flags. No past flags exist, so these cannot be tested yet |
+| football-data.org and API-Football | Free tiers appear not to offer usable line-ups. Based on third-party articles, not checked against official pricing |
+| ClubElo | Not tested: its API returned errors. The model already has its own Elo |
+
+**Decision:** injury flags are now saved on each pipeline run by `scripts/snapshot_injuries.py`, to `data/fpl_injury_flags.csv`. They can be tested after about a season. They are not a model input.

@@ -269,3 +269,6 @@ node_modules/
 
 # Local app state
 logs/fixtures_cache.json
+
+# Injury snapshots stay local: republishing FPL data is unchecked
+data/fpl_injury_flags.csv

@@ -122,6 +122,11 @@ log ""
 log "Step 5c: Logging practice picks..."
 $PYTHON_BIN scripts/predict.py --fetch-odds --days 7 2>&1 | tee -a "$LOG_FILE" || info "Practice picks skipped (odds unavailable)"
 
+# Step 5d: Save injury flags for future testing. A failed call must not fail the run.
+log ""
+log "Step 5d: Saving injury flags..."
+$PYTHON_BIN scripts/snapshot_injuries.py 2>&1 | tee -a "$LOG_FILE" || info "Injury snapshot skipped (source unavailable)"
+
 # Step 6: Validation query
 log ""
 log "Step 6: Final validation..."

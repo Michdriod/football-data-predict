@@ -1309,7 +1309,27 @@ Step 18  — Add betting value logic                     [✓] Complete
 Step 19  — Backtest by season                          [✓] Complete
 Step 20  — Improve feature engineering                 [✓] Optional (V1 complete)
 Step 21  — Build automated update pipeline             [✓] Complete
+Step 22  — Audit, leak fixes and new match model       [✓] Complete (2026-10-30)
+Step 23  — FastAPI + React picks app                   [✓] Complete (2026-10-30)
 ```
+
+**Audit (Step 22) - READ THIS FIRST:**
+- Full findings: MODEL_AUDIT_2026-10.md
+- Every AUC, win rate and ROI recorded below for Steps 16-19 and in the older reports is INVALID. They came from a target leak in the streak features and models trained on validation data only.
+- Honest test performance (Jul 2024-Apr 2026): Home win AUC 0.70, Away win 0.71, Over 2.5 0.55, BTTS 0.53. The bookmaker closing price scores 0.72, 0.72 and 0.57.
+- Production model is scripts/match_model.py (goal model + Elo + form, stacked per market). predict.py and the app use it. The Logistic Regression and Random Forest files are baselines only.
+- No betting edge has been shown, so predict.py runs in practice mode (see Betting Value Logic).
+- HxG/AxG are stored from 2026-27 on as home_xg/away_xg in stg_football_matches, but are not model inputs.
+
+**Picks App (Step 23):**
+- Start with `bash scripts/run_app.sh`, then open http://127.0.0.1:8000
+- api/main.py serves /api/picks and /api/track-record; frontend/ is the React app. Both are in addition to the layout listed at the top of this file.
+- The app shows one pick per match, only at 85%+ (PICK_THRESHOLD and select_picks in scripts/match_model.py). Never lower the bar to fill the page.
+- Historical test: 90.8% correct on 391 picks (walk-forward, logs/pick_history.csv, rebuilt by `match_model.py --evaluate`). Nearly all are win-or-draw favourites at a typical price of about 1.12, so this is not evidence of profit.
+- Each pick is saved to logs/issued_picks.csv when first shown. Never edit that file: it is the live record.
+- Odds API calls are cached for 6 hours (logs/fixtures_cache.json) to protect the free quota.
+- Free data test (see MODEL_AUDIT_2026-10.md): team xG and line-up strength gave no holdout gain, so neither is a model input. Do not scrape Understat: its robots.txt disallows it. Re-test xG after 2026-27.
+- scripts/snapshot_injuries.py appends flagged players to data/fpl_injury_flags.csv on each pipeline run, so injury news can be tested after about a season. Never delete that file: past flags cannot be recovered.
 
 **Automated Update Pipeline (Step 21):**
 - Created scripts/auto_update.py (550+ lines) - One-command automation for weekly updates
