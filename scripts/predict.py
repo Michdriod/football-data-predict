@@ -23,7 +23,7 @@ import sys
 import argparse
 import json
 import warnings
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -35,15 +35,26 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 # Import centralized configuration
 from config import (
-    BETTING_THRESHOLDS,
+    LOGS_DIR,
+    PRACTICE_THRESHOLDS,
     TARGETS
 )
 
 # Import the trained match model
-from match_model import load_bundle, predict_fixtures
+from match_model import add_targets, load_bundle, load_matches, predict_fixtures
 
 # Import odds fetching functions
 from fetch_odds import fetch_upcoming_fixtures, parse_odds_for_targets
+
+PRACTICE_LOG = LOGS_DIR / 'practice_picks.csv'
+
+# Closing price used to judge each practice pick
+CLOSING_ODDS_COLUMNS = {
+    'target_over_25': 'avg_closing_over_25_odds',
+    'target_home_win': 'avg_closing_home_win_odds',
+    'target_draw': 'avg_closing_draw_odds',
+    'target_away_win': 'avg_closing_away_win_odds'
+}
 
 # ============================================================================
 # ODDS
@@ -162,22 +173,23 @@ def generate_prediction(home_team, away_team, match_date, bundle, odds_data=None
                         pred_detail['implied_probability'] = float(round(implied_prob, 4))
                         pred_detail['value_edge'] = float(round(value_edge, 4))
                         
-                        # Betting recommendation
-                        if (proba >= BETTING_THRESHOLDS['min_probability'] and 
-                            value_edge >= BETTING_THRESHOLDS['min_value_edge'] and
-                            BETTING_THRESHOLDS['min_odds'] <= decimal_odds <= BETTING_THRESHOLDS['max_odds']):
-                            pred_detail['recommendation'] = 'BET'
-                            pred_detail['bet_size'] = 'STANDARD'
+                        # Practice mode: paper picks only, until tracked results prove an edge.
+                        # Double chance prices are calculated, not bookable, so they never qualify.
+                        has_real_price = odds_key is not None
+                        in_odds_range = PRACTICE_THRESHOLDS['min_odds'] <= decimal_odds <= PRACTICE_THRESHOLDS['max_odds']
+                        if (has_real_price and in_odds_range and
+                            value_edge >= PRACTICE_THRESHOLDS['min_value_edge']):
+                            pred_detail['recommendation'] = 'PRACTICE'
                         else:
                             pred_detail['recommendation'] = 'NO BET'
                             
                             # Explain why
                             reasons = []
-                            if proba < BETTING_THRESHOLDS['min_probability']:
-                                reasons.append(f"Probability too low ({proba:.1%} < {BETTING_THRESHOLDS['min_probability']:.0%})")
-                            if value_edge < BETTING_THRESHOLDS['min_value_edge']:
-                                reasons.append(f"Value edge too low ({value_edge:+.2%} < {BETTING_THRESHOLDS['min_value_edge']:+.0%})")
-                            if decimal_odds < BETTING_THRESHOLDS['min_odds'] or decimal_odds > BETTING_THRESHOLDS['max_odds']:
+                            if not has_real_price:
+                                reasons.append("No real bookmaker price")
+                            if value_edge < PRACTICE_THRESHOLDS['min_value_edge']:
+                                reasons.append(f"Value edge too low ({value_edge:+.2%} < {PRACTICE_THRESHOLDS['min_value_edge']:+.0%})")
+                            if not in_odds_range:
                                 reasons.append(f"Odds outside range ({decimal_odds:.2f})")
                             pred_detail['reason'] = ', '.join(reasons)
             
@@ -214,7 +226,7 @@ def format_output(predictions, as_json=False):
             
             if 'recommendation' in details:
                 rec = details['recommendation']
-                line += f" | Rec: {rec:6}"
+                line += f" | Rec: {rec:8}"
                 
                 if 'market_odds' in details:
                     odds = details['market_odds']
@@ -226,6 +238,89 @@ def format_output(predictions, as_json=False):
     output += "\n" + "="*120 + "\n"
     
     return output
+
+
+# ============================================================================
+# PRACTICE TRACKING
+# ============================================================================
+
+def save_practice_picks(predictions, log_path=PRACTICE_LOG):
+    """
+    Append new practice picks to the log. A market is logged once per match,
+    so the first price seen is the one judged.
+    
+    Returns:
+        int: Number of new picks logged
+    """
+    target_by_name = {name: target for target, name in TARGETS.items()}
+    picks = [
+        {
+            'logged_at': datetime.now().isoformat(timespec='seconds'),
+            'match_date': pred['match_date'],
+            'home_team': pred['home_team'],
+            'away_team': pred['away_team'],
+            'target': target_by_name[market],
+            'probability': details['probability'],
+            'odds': details['market_odds'],
+            'value_edge': details['value_edge']
+        }
+        for pred in predictions
+        for market, details in pred['predictions'].items()
+        if details.get('recommendation') == 'PRACTICE'
+    ]
+    if not picks:
+        return 0
+    
+    new_picks = pd.DataFrame(picks)
+    match_columns = ['match_date', 'home_team', 'away_team', 'target']
+    
+    if log_path.exists():
+        logged = pd.read_csv(log_path)
+        seen = new_picks.merge(logged[match_columns], on=match_columns, how='left', indicator=True)
+        new_picks = new_picks[(seen['_merge'] == 'left_only').values]
+        combined = pd.concat([logged, new_picks], ignore_index=True)
+    else:
+        combined = new_picks
+    
+    combined.to_csv(log_path, index=False)
+    return len(new_picks)
+
+
+def practice_report(log_path=PRACTICE_LOG):
+    """
+    Score logged practice picks against results and closing prices.
+    
+    Returns:
+        pd.DataFrame: Settled picks, or None if there are none
+    """
+    print("\n" + "="*80)
+    print("PRACTICE PICKS REPORT")
+    print("="*80)
+    
+    if not log_path.exists():
+        print("\nNo practice picks logged yet.")
+        return None
+    
+    picks = pd.read_csv(log_path, parse_dates=['match_date'])
+    results = add_targets(load_matches())
+    settled = picks.merge(results, on=['match_date', 'home_team', 'away_team'])
+    
+    print(f"\nPicks logged:  {len(picks):,}")
+    print(f"Picks settled: {len(settled):,}")
+    if settled.empty:
+        return None
+    
+    rows = settled.to_dict('records')
+    settled['won'] = [row[row['target']] for row in rows]
+    settled['profit'] = settled['won'] * settled['odds'] - 1
+    settled['closing_odds'] = [float(row[CLOSING_ODDS_COLUMNS[row['target']]]) for row in rows]
+    settled['beat_close'] = settled['odds'] / settled['closing_odds'] - 1
+    
+    print(f"\nWin rate:              {settled['won'].mean():.1%}")
+    print(f"Profit per 1 staked:   {settled['profit'].mean():+.3f}")
+    print(f"Price vs closing:      {settled['beat_close'].mean():+.2%}")
+    print("\nA real edge needs a positive price vs closing over 200+ settled picks.")
+    return settled
 
 
 # ============================================================================
@@ -250,6 +345,9 @@ EXAMPLES:
   
   # JSON output
   python scripts/predict.py --fetch-odds --json
+  
+  # Score logged practice picks
+  python scripts/predict.py --practice-report
         """
     )
     
@@ -259,8 +357,13 @@ EXAMPLES:
     parser.add_argument('--fetch-odds', action='store_true', help='Fetch live odds from API')
     parser.add_argument('--days', type=int, default=7, help='Days ahead to fetch fixtures (default: 7)')
     parser.add_argument('--json', action='store_true', help='Output as JSON')
+    parser.add_argument('--practice-report', action='store_true', help='Score logged practice picks and exit')
     
     args = parser.parse_args()
+    
+    if args.practice_report:
+        practice_report()
+        return 0
     
     print("\n" + "="*80)
     print("FOOTBALL MATCH PREDICTION SYSTEM")
@@ -389,6 +492,9 @@ EXAMPLES:
                     f.write(output)
             
             print(f"\n✓ Predictions saved to: {output_file}")
+            
+            new_picks = save_practice_picks(predictions)
+            print(f"✓ Practice picks logged: {new_picks} (not real-money advice)")
         else:
             print("\n⚠️  No predictions generated")
         

@@ -117,6 +117,11 @@ cd "$PROJECT_DIR" || error_exit "Cannot return to project directory"
 $PYTHON_BIN scripts/match_model.py --train 2>&1 | tee -a "$LOG_FILE" || error_exit "Model training failed"
 success "Match model retrained"
 
+# Step 5c: Log practice picks at current prices. A failed odds call must not fail the run.
+log ""
+log "Step 5c: Logging practice picks..."
+$PYTHON_BIN scripts/predict.py --fetch-odds --days 7 2>&1 | tee -a "$LOG_FILE" || info "Practice picks skipped (odds unavailable)"
+
 # Step 6: Validation query
 log ""
 log "Step 6: Final validation..."

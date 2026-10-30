@@ -141,6 +141,14 @@ BETTING_THRESHOLDS = {
     'max_odds': float(get_env_var('MAX_ODDS', '3.00', required=False))
 }
 
+# Practice mode: logged paper picks, never real-money advice. Wider than
+# BETTING_THRESHOLDS so a season yields enough picks to measure whether an edge exists.
+PRACTICE_THRESHOLDS = {
+    'min_value_edge': 0.03,
+    'min_odds': 1.30,
+    'max_odds': 6.00
+}
+
 # ============================================================================
 # PREDICTION TARGETS
 # ============================================================================

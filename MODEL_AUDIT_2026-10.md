@@ -46,7 +46,9 @@ Flat one-unit stakes on Bet365 pre-match prices, across over, under, home, draw 
 
 Bet365's average margin is about 5%, so a small negative ROI is what a no-edge model should produce. In the research run, picks also had about 4% worse price than the fair closing price, on average. That is the most reliable sign that the "edges" were not real.
 
-The current rule produced 0 BET picks across the 10 fixtures for 31 Oct to 2 Nov 2026. That is the correct behaviour.
+The old rule produced 0 BET picks across the 10 fixtures for 31 Oct to 2 Nov 2026.
+
+**Decision:** the app now runs in practice mode. It never says BET. Any real-priced edge of 3% or more is labelled PRACTICE and saved to `logs/practice_picks.csv`. That wider rule gave about 280 picks a season in testing, whereas the old rule gave about 2. Double chance is excluded because its prices are calculated. Run `python scripts/predict.py --practice-report` to score the picks. Real-money labels should only return if picks beat the closing price over 200 or more settled picks.
 
 ## Faults found and fixed
 

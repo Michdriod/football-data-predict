@@ -257,6 +257,9 @@ python scripts/train_models.py --models logistic random_forest --skip-cv
 ```bash
 python scripts/predict.py --fetch-odds --days 7
 python scripts/predict.py --home Arsenal --away Chelsea --date 2026-11-07
+
+# Score logged practice picks against results and closing prices
+python scripts/predict.py --practice-report
 ```
 
 ---
@@ -1235,7 +1238,9 @@ implied_probability = 1 / decimal_odds
 value_edge = model_probability - implied_probability
 ```
 
-Version 1 decision rule (tune during backtesting):
+**Practice mode is active (owner decision, 2026-10-30).** predict.py never outputs Bet. It labels a pick PRACTICE when a real bookmaker price has value_edge >= 0.03 and odds of 1.30 to 6.00, and logs it to logs/practice_picks.csv. Do not re-enable real-money labels unless `--practice-report` shows a positive price vs closing over 200+ settled picks and the owner approves.
+
+Original Version 1 decision rule, not in use:
 
 ```
 Recommend Bet only if:
